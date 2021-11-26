@@ -3,3 +3,5 @@ bin/StringFixedLengthSplitter.class
 bin/StringJaHyphenationSplitter.class
 bin/StringMoreSplitter.class
 bin/StringSplitter.class
+bin/SplitterByWidth.class
+bin/Splitter.class
