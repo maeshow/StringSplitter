@@ -5,3 +5,6 @@ bin/StringMoreSplitter.class
 bin/StringSplitter.class
 bin/SplitterByWidth.class
 bin/Splitter.class
+bin/App.class
+bin/ISplitter.class
+bin/ISplitterByWidth.class

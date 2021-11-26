@@ -1,76 +1,59 @@
-import java.util.ArrayList;
 import java.util.List;
 
-public class StringJaHyphenationSplitter {
-    private static String EMPTY = "";
-    private static String PERIOD = "。";
-    private static String LINE_BREAK = "¥n";
-    private static String PUNCTUATION = "、";
+public class StringJaHyphenationSplitter implements ISplitterByWidth {
 
-    public static void main(String[] args) {
-        List<String> lines = splitFixedLengthJaHyphenationWithLineBreakCodeAndPeriod(
-                "このプログラムは、句読点を行頭禁則処理するサンプル。¥n" + "最後の行です", 8);
-        for (String line : lines) {
-            System.out.println(line);
-        }
+    private ISplitterByWidth splitterByWidth;
+    private static int BEGINNING_OF_LINE = 0;
+
+    public StringJaHyphenationSplitter() {
+        this.splitterByWidth = new StringFixedLengthSplitter();
     }
 
-    private static List<String> splitFixedLengthJaHyphenationWithLineBreakCodeAndPeriod(String str, int width) {
-        return splitFixedLength(splitWithLineBreak(splitWithPeriod(str)), width);
+    @Override
+    public List<String> splitByWidth(List<String> list, int width) {
+        return fixedIllegalChar(splitterByWidth.splitByWidth(list, width));
     }
 
-    private static List<String> splitFixedLength(List<String> list, int width) {
-        List<String> result = new ArrayList<>();
-        int i = 0;
+    private static List<String> fixedIllegalChar(List<String> list) {
+        int lineNumber = 0;
         for (String str : list) {
-            int beginIndex = 0;
-            int endIndex = width;
-            String resultStr = "";
-            while (!isOver(str.length(), beginIndex)) {
-                if (isOver(str.length(), endIndex)) {
-                    resultStr = str.substring(beginIndex);
-                    if (isIllegalChar(resultStr)) {
-                        setPrevLine(result, i, resultStr);
-                        if (isOver(resultStr.length(), beginIndex + 1)) {
-                            break;
-                        }
-                        resultStr = str.substring(beginIndex + 1);
-                    }
-                    result.add(resultStr);
-                    break;
-                }
-                resultStr = str.substring(beginIndex, endIndex);
-                if (isIllegalChar(resultStr)) {
-                    setPrevLine(result, i, resultStr);
-                    beginIndex++;
-                    endIndex++;
-                    resultStr = alignLine(str, beginIndex, endIndex);
-                }
-                result.add(resultStr);
-                beginIndex += width;
-                endIndex += width;
-                i++;
+            if (isIllegalChar(str)) {
+                alignLine(list, lineNumber);
             }
+            lineNumber++;
         }
+        return list;
+    }
+
+    private static void alignLine(List<String> list, int lineNumber) {
+        while (isSafeBounds(list, lineNumber)) {
+            addLineEnd(list, lineNumber - 1, deleteLineHead(list, lineNumber));
+            if (isLineBreak(list.get(lineNumber))) {
+                break;
+            }
+            lineNumber++;
+        }
+    }
+
+    private static char deleteLineHead(List<String> list, int lineNumber) {
+        String str = list.get(lineNumber);
+        StringBuilder builder = new StringBuilder(str);
+        char result = builder.charAt(BEGINNING_OF_LINE);
+        builder.deleteCharAt(BEGINNING_OF_LINE);
+        list.set(lineNumber, builder.toString());
         return result;
     }
 
-    private static boolean isOver(int a, int b) {
-        return a < b;
+    private static void addLineEnd(List<String> list, int lineNumber, char addChar) {
+        if (isSafeBounds(list, lineNumber)) {
+            StringBuilder builder = new StringBuilder(list.get(lineNumber));
+            builder.append(addChar);
+            list.set(lineNumber, builder.toString());
+        }
     }
 
-    private static void setPrevLine(List<String> list, int index, String currentStr) {
-        if (isSafeBounds(list, index - 1)) {
-            StringBuilder builder = new StringBuilder();
-            builder.append(list.get(index - 1));
-            if (isPeriodOnHead(currentStr)) {
-                builder.append(PERIOD);
-            }
-            if (isPunctuationOnHead(currentStr)) {
-                builder.append(PUNCTUATION);
-            }
-            list.set(index - 1, builder.toString());
-        }
+    private static boolean isLineBreak(String str) {
+        return str.indexOf(PERIOD) == str.length() - 1;
     }
 
     private static boolean isSafeBounds(List<String> list, int index) {
@@ -82,59 +65,10 @@ public class StringJaHyphenationSplitter {
     }
 
     private static boolean isPeriodOnHead(String str) {
-        return str.indexOf(PERIOD) == 0;
+        return str.indexOf(PERIOD) == BEGINNING_OF_LINE;
     }
 
     private static boolean isPunctuationOnHead(String str) {
-        return str.indexOf(PUNCTUATION) == 0;
-    }
-
-    private static String alignLine(String origin, int beginIndex, int endIndex) {
-        if (!isOver(origin.length(), endIndex)) {
-            return origin.substring(beginIndex, endIndex);
-        }
-        return origin.substring(beginIndex);
-    }
-
-    private static List<String> splitWithPeriod(String str) {
-        List<String> result = new ArrayList<>();
-        int beginIndex = 0;
-        while (true) {
-            int endIndex = str.indexOf(PERIOD, beginIndex);
-            if (!hasString(endIndex)) {
-                result.add(str.substring(beginIndex));
-                break;
-            }
-            endIndex++;
-            result.add(str.substring(beginIndex, endIndex));
-            beginIndex = endIndex;
-        }
-        return result;
-    }
-
-    private static List<String> splitWithLineBreak(List<String> list) {
-        List<String> result = new ArrayList<>();
-        for (String str : list) {
-            int lineBreakIndex = str.indexOf(LINE_BREAK);
-            if (!hasString(lineBreakIndex)) {
-                result.add(str);
-                continue;
-            }
-            if (isIgnoreLineBreak(lineBreakIndex)) {
-                str = str.replaceFirst(LINE_BREAK, EMPTY);
-            }
-            for (String s : str.split(LINE_BREAK)) {
-                result.add(s);
-            }
-        }
-        return result;
-    }
-
-    private static boolean hasString(int index) {
-        return index != -1;
-    }
-
-    private static boolean isIgnoreLineBreak(int index) {
-        return index == 0;
+        return str.indexOf(PUNCTUATION) == BEGINNING_OF_LINE;
     }
 }
