@@ -40,6 +40,10 @@ public class StringJaHyphenationSplitter implements ISplitterByWidth {
         StringBuilder builder = new StringBuilder(str);
         char result = builder.charAt(BEGINNING_OF_LINE);
         builder.deleteCharAt(BEGINNING_OF_LINE);
+        if (builder.length() == 0) {
+            list.remove(lineNumber);
+            return result;
+        }
         list.set(lineNumber, builder.toString());
         return result;
     }

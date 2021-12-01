@@ -4,7 +4,7 @@ import java.util.List;
 public class App {
 
     public static void main(String[] args) {
-        task1();
+        task4();
     }
 
     private static void task1() {
